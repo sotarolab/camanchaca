@@ -1,0 +1,14 @@
+events:                                                                 # top level key
+  snowzilla_2016:                                                       # nested key - the event ID
+    name: "Snowzilla"                                                   # string value
+    start: "2016-01-21"
+    end: "2016-01-25"
+    bbox: [-82, 36, -70, 42]                                            #inline list of numbers
+    variables: [tp, msl, t2m, u10, v10]
+    description: "Historic January blizzard affecting DC metro area"
+    tags: [blizzard, east-coast, winter, precipitation]
+    marker:                  
+      lon: -77.0369
+      lat: 38.9072
+      label: "DC"
+    
