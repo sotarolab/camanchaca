@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+.env
+.DS_Store
+.pytest_cache/
+*.ipynb_checkpoints/
+
+# ERA5 data — too large for GitHub
+data/*.nc
+outputs/*.mp4
+outputs/*.gif
+
+!data/.gitkeep
+!outputs/.gitkeep
