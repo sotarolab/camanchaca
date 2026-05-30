@@ -1,14 +1,43 @@
-events:                                                                 # top level key
-  snowzilla_2016:                                                       # nested key - the event ID
-    name: "Snowzilla"                                                   # string value
+events:
+
+  # ── Blizzard ────────────────────────────────────────────────────────────────
+  snowzilla_2016:
+    name: "Snowzilla"
     start: "2016-01-21"
     end: "2016-01-25"
-    bbox: [-82, 36, -70, 42]                                            #inline list of numbers
+    bbox: [-82, 36, -70, 42]
     variables: [tp, msl, t2m, u10, v10]
-    description: "Historic January blizzard affecting DC metro area"
+    description: "Historic January blizzard affecting the DC metro area and US East Coast"
     tags: [blizzard, east-coast, winter, precipitation]
-    marker:                  
+    marker:
       lon: -77.0369
       lat: 38.9072
       label: "DC"
-    
+
+  # ── Atmospheric River ────────────────────────────────────────────────────────
+  russian_river_ar_2023:
+    name: "Russian River AR 2023"
+    start: "2023-01-09"
+    end: "2023-01-13"
+    bbox: [-130, 32, -110, 50]
+    variables: [tp, msl, t2m, u10, v10]
+    description: "Major atmospheric river landfall along the California coast causing widespread flooding including the Russian River watershed"
+    tags: [atmospheric-river, california, west-coast, winter, precipitation, flooding]
+    marker:
+      lon: -123.0075
+      lat: 38.5027
+      label: "Guerneville"
+
+  # ── Tropical / Extreme Precipitation ────────────────────────────────────────
+  hurricane_harvey_2017:
+    name: "Hurricane Harvey"
+    start: "2017-08-25"
+    end: "2017-08-31"
+    bbox: [-102, 25, -88, 35]
+    variables: [tp, msl, t2m, u10, v10]
+    description: "Category 4 hurricane at landfall near Rockport TX, stalled over Houston producing catastrophic rainfall totals"
+    tags: [hurricane, tropical, gulf-coast, summer, precipitation, flooding]
+    marker:
+      lon: -95.3677
+      lat: 29.7604
+      label: "Houston"

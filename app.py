@@ -8,8 +8,8 @@ from dash import Dash, Input, Output, State, callback, dcc, html
 
 ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT / "src"))
-from weathercase.loader import VARIABLE_META, load_era5, get_time_labels, get_variable_array
-from weathercase.catalog import get_event 
+from camanchaca.loader import VARIABLE_META, load_era5, get_time_labels, get_variable_array
+from camanchaca.catalog import get_event 
 
 # ---------------------------------------------------------------------------
 # Data Loading
@@ -29,7 +29,7 @@ DC_LON, DC_LAT = -77.0369, 38.9072
 # App
 # ---------------------------------------------------------------------------
 
-app = Dash(__name__, title="weathercase")
+app = Dash(__name__, title="camanchaca")
 
 app.layout = html.Div(
     style={
@@ -42,7 +42,7 @@ app.layout = html.Div(
     children=[
 
         # Header
-        html.H1("weathercase",
+        html.H1("camanchaca",
                 style={"color": "#60a5fa", "margin": "0", "fontSize": "1.8rem"}),
         html.P("Snowzilla 2016 — ERA5 Event Explorer",
                style={"color": "#9ca3af", "margin": "4px 0 16px 0"}),
@@ -195,5 +195,5 @@ def advance_frame(n_intervals, current):
 # Run
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    print("weathercase running at http://localhost:8050")
+    print("camanchaca running at http://localhost:8050")
     app.run(debug=True)

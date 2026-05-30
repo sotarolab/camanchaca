@@ -1,5 +1,5 @@
 """ 
-weathercase - Understand extreme weather events in context.
+camanchaca - Understand extreme weather events in context.
 Animates historical ERA5 events and benchmarks them against climatology.
 """
 

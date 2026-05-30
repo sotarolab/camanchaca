@@ -1,5 +1,5 @@
 """
-weathercase.catalog
+camanchaca.catalog
 -------------------
 Loads named weather events from the YAML catalog.
 """

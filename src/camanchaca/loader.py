@@ -1,5 +1,5 @@
 """
-weathercase.loader
+camanchaca.loader
 ------------------
 
 ERA5 data loading and preprocessing.
@@ -110,4 +110,3 @@ def get_variable_array(ds, var, time_idx):
     da = ds[var] 
     da_sub = da.isel(time=time_idx)
     return da_sub.values
-
