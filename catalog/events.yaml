@@ -1,8 +1,8 @@
 events:
 
   # ── Blizzard ────────────────────────────────────────────────────────────────
-  snowzilla_2016:
-    name: "Snowzilla"
+  snowzilla_2016:     # event key 
+    name: "Snowzilla" # name
     start: "2016-01-21"
     end: "2016-01-25"
     bbox: [-82, 36, -70, 42]
@@ -41,3 +41,73 @@ events:
       lon: -95.3677
       lat: 29.7604
       label: "Houston"
+
+  # ── Arctic Outbreak / Winter Storm ───────────────────────────────────────────
+  winter_storm_uri_2021:
+    name: "Winter Storm Uri"
+    start: "2021-02-10"
+    end: "2021-02-20"
+    bbox: [-106, 25, -88, 40]
+    variables: [tp, msl, t2m, u10, v10]
+    description: "Unprecedented Arctic outbreak that overwhelmed Texas power infrastructure, with record-low temperatures across the South-Central US"
+    tags: [winter, arctic-outbreak, texas, south-central, cold, precipitation]
+    marker:
+      lon: -97.7431
+      lat: 30.2672
+      label: "Austin"
+
+  # ── Tropical / Inland Flooding ────────────────────────────────────────────────
+  hurricane_ida_2021:
+    name: "Hurricane Ida"
+    start: "2021-08-26"
+    end: "2021-09-02"
+    bbox: [-95, 28, -70, 45]
+    variables: [tp, msl, t2m, u10, v10]
+    description: "Category 4 landfall near Port Fourchon LA, then tracked northeast producing catastrophic inland flooding across the mid-Atlantic and New England"
+    tags: [hurricane, tropical, gulf-coast, northeast, precipitation, flooding]
+    marker:
+      lon: -90.0715
+      lat: 29.9511
+      label: "New Orleans"
+
+  # ── Heatwave ──────────────────────────────────────────────────────────────────
+  pacific_nw_heat_dome_2021:
+    name: "Pacific NW Heat Dome"
+    start: "2021-06-25"
+    end: "2021-07-02"
+    bbox: [-130, 42, -110, 52]
+    variables: [msl, t2m, u10, v10]
+    description: "Exceptional heat dome driven by an amplified upper-level ridge; Lytton BC reached 49.6°C, a Canadian all-time record"
+    tags: [heatwave, pacific-northwest, summer, temperature, ridge]
+    marker:
+      lon: -122.6784
+      lat: 45.5051
+      label: "Portland"
+
+  # ── Extratropical Cyclone / European Windstorm ────────────────────────────────
+  windstorm_klaus_2009:
+    name: "European Windstorm Klaus"
+    start: "2009-01-23"
+    end: "2009-01-25"
+    bbox: [-10, 36, 10, 48]
+    variables: [msl, t2m, u10, v10]
+    description: "Violent extratropical cyclone crossing the Bay of Biscay with hurricane-force gusts across southwestern France and northern Spain"
+    tags: [windstorm, extratropical, europe, france, spain, winter, wind]
+    marker:
+      lon: -1.5536
+      lat: 43.4832
+      label: "Bayonne"
+
+  # ── Hybrid Tropical-Extratropical / Coastal Surge ────────────────────────────
+  hurricane_sandy_2012:
+    name: "Hurricane Sandy"
+    start: "2012-10-22"
+    end: "2012-10-31"
+    bbox: [-82, 32, -64, 46]
+    variables: [tp, msl, t2m, u10, v10]
+    description: "Large hybrid storm making landfall near Atlantic City NJ after extratropical transition; record storm surge in New York Harbor"
+    tags: [hurricane, hybrid, extratropical, east-coast, surge, flooding, wind]
+    marker:
+      lon: -74.0060
+      lat: 40.7128
+      label: "New York"

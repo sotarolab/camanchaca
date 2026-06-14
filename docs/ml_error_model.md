@@ -1,4 +1,4 @@
-# weathercase — ML Forecast Error Model Design
+# camanchaca — ML Forecast Error Model Design
 
 ## Motivation
 
@@ -11,6 +11,11 @@ toward observed conditions.
 
 The central question: **given a single NWP model run evolving forward in time,
 can we predict the error at every lead time simultaneously?**
+
+This is the Phase 3 capstone of camanchaca, building on:
+- Phase 1's event catalog and climatological benchmarking (return periods, percentile rank)
+- Phase 2's forecast retrieval and verification (`src/camanchaca/forecast/`) — bias/RMSE
+  by lead time, which establishes the naive baseline this model must beat
 
 ---
 
@@ -59,9 +64,13 @@ Predicting the full error profile `(L,)` rather than a scalar at one lead time:
 
 | Source | Role | Access |
 |---|---|---|
-| HRRR (NOAA) | Primary NWP forecast | NOAA NOMADS / AWS S3 `noaa-hrrr-bdp-pds` |
-| ERA5 (ECMWF) | Verification truth (gridded) | Copernicus CDS via `cdsapi` |
+| GFS archive | Primary NWP forecast | NOAA NOMADS / AWS, via `Herbie` (`src/camanchaca/forecast/fetch_gfs.py`) |
+| ERA5 (ECMWF) | Verification truth (gridded) | Copernicus CDS via `cdsapi` (`src/camanchaca/fetch.py`) |
 | ASOS (FAA/NWS) | Verification truth (point obs) | Iowa State ASOS API |
+
+GFS is the Phase 2 default for forecast retrieval. HRRR (higher resolution,
+shorter horizon) is a possible alternative source for CONUS events if GFS
+lead-time coverage proves insufficient — same interface, different fetch module.
 
 ### Sample Construction
 
@@ -80,9 +89,13 @@ sample = {
 }
 ```
 
-Samples are drawn from the weathercase event catalog — each catalog entry defines
-the event window, spatial domain, and variables of interest. This keeps the
-training dataset reproducible and event-stratified.
+Samples are drawn from the camanchaca event catalog (`catalog/events.yaml`) —
+each catalog entry defines the event window, spatial domain, and variables of
+interest. This keeps the training dataset reproducible and event-stratified.
+
+Initial catalog events available for sampling: `snowzilla_2016`,
+`russian_river_ar_2023`, `hurricane_harvey_2017`. More events can be added to
+the catalog (~10 lines of YAML) to grow the training set.
 
 ### Feature Set (F channels)
 
@@ -106,9 +119,49 @@ so extending the feature set requires no architectural changes.
 
 ---
 
+## Baselines (established in Phase 1-2, required before this model is meaningful)
+
+Before training any model, two baselines must be computed for comparison:
+
+1. **Naive / persistence**: `ε_pred(τ) = 0` (no correction) — the raw forecast
+2. **Climatological bias correction**: `ε_pred(τ) = mean(ε(τ))` across all
+   historical samples at that lead time — a constant-per-lead-time correction,
+   computed via `src/camanchaca/forecast/verify.py`
+
+Any learned model (MLP, LSTM, Transformer) must demonstrably beat #2 to be
+worth the added complexity. This comparison is the headline result of Phase 3.
+
+---
+
 ## Model Architecture
 
-### Baseline: LSTM Encoder
+### Step 0: MLP baseline (simplest learned model)
+
+Before any sequence model, a per-lead-time feedforward network that ignores
+sequence structure — treats each `(τ, f(τ))` pair independently. This isolates
+"can a model learn anything beyond the climatological mean" from "does sequence
+structure help."
+
+```python
+import torch.nn as nn
+
+class MLPErrorModel(nn.Module):
+    """Per-lead-time MLP baseline — no sequence structure."""
+
+    def __init__(self, n_features: int = 1, hidden_size: int = 32):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(n_features, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, 1),
+        )
+
+    def forward(self, x):
+        # x: (batch, L, F) -> treat each (L) step independently
+        return self.net(x).squeeze(-1)  # (batch, L)
+```
+
+### Step 1: LSTM Encoder (sequence baseline)
 
 A standard sequence-to-sequence LSTM that reads the full forecast trajectory
 and decodes an error estimate at every step.
@@ -174,7 +227,7 @@ class LSTMErrorModel(nn.Module):
         return self.head(out).squeeze(-1)  # (batch, L)
 ```
 
-### Extended: Transformer Encoder
+### Step 2 (stretch): Transformer Encoder
 
 For longer forecast horizons (L > 72hr) or richer feature sets, a Transformer
 encoder with positional encoding outperforms LSTM by capturing non-local
@@ -270,11 +323,11 @@ lead errors without ignoring short-lead performance.
 ### Training Loop Sketch
 
 ```python
-from weathercase.ml import LSTMErrorModel, ForecastErrorDataset
+from camanchaca.ml import LSTMErrorModel, ForecastErrorDataset
 from torch.utils.data import DataLoader
 
 dataset = ForecastErrorDataset(
-    catalog_events=["snowzilla_2016", "pineapple_express_2023"],
+    catalog_events=["snowzilla_2016", "russian_river_ar_2023", "hurricane_harvey_2017"],
     variable="t2m",
     lead_hours=48,
     n_features=1,
@@ -300,7 +353,7 @@ for epoch in range(100):
 | Metric | Description |
 |---|---|
 | MAE by lead time | Primary metric — error magnitude at each τ |
-| Skill score vs. raw forecast | `1 - MAE_corrected / MAE_raw` — does correction help? |
+| Skill score vs. climatological baseline | `1 - MAE_model / MAE_climatology` — does the model beat baseline #2? |
 | Bias by lead time | `mean(ε_pred - ε_true)` — is the model systematically off? |
 | Sharpness | Std of predicted error across events — is the model collapsing to mean? |
 
@@ -308,28 +361,34 @@ for epoch in range(100):
 
 ## Module Layout
 
+Matches the planned structure in the project [README](README.md):
+
 ```
-weathercase/ml/
-├── __init__.py               Guards torch import
+src/camanchaca/ml/
+├── __init__.py               Guards torch import (optional dependency)
 ├── dataset.py                ForecastErrorDataset — sample construction from catalog
 ├── models/
-│   ├── lstm.py               LSTMErrorModel
-│   └── transformer.py        TransformerErrorModel
-├── loss.py                   weighted_mse_loss
-├── train.py                  Training loop, checkpointing, validation
-├── correction.py             BiasCorrector — apply trained model at inference
-└── evaluate.py               MAE by lead time, skill score, bias diagnostics
+│   ├── mlp.py                 MLPErrorModel (baseline)
+│   ├── lstm.py                LSTMErrorModel
+│   └── transformer.py         TransformerErrorModel (stretch)
+├── loss.py                    weighted_mse_loss
+├── train.py                   Training loop, checkpointing, validation
+├── correction.py               BiasCorrector — apply trained model at inference
+└── evaluate.py                MAE by lead time, skill score, bias diagnostics
 ```
+
+Depends on `src/camanchaca/forecast/` (Phase 2) for forecast/truth pairs and
+the climatological baseline, and `catalog/events.yaml` for event definitions.
 
 ---
 
-## Integration with weathercase App
+## Integration with camanchaca App
 
 At inference time, the corrected forecast is a drop-in replacement for the raw
 NWP field in the Dash visualization:
 
 ```python
-from weathercase.ml import BiasCorrector
+from camanchaca.ml import BiasCorrector
 
 corrector = BiasCorrector.from_checkpoint("checkpoints/lstm_t2m.pt")
 corrected_ds = corrector.apply(forecast_ds, points=asos_stations)
@@ -343,17 +402,19 @@ allowing the user to see the correction magnitude spatially across the event.
 
 ---
 
-## Development Phases
+## Development Phases (within camanchaca Phase 3)
 
-| Phase | Scope | Infrastructure |
+| Step | Scope | Infrastructure |
 |---|---|---|
-| 1 — Retrospective | Archive HRRR + ERA5 for catalog events, build dataset, train LSTM | Fully offline, reproducible |
-| 2 — Validation | Skill score vs. raw NWP across held-out events, lead-time diagnostics | Offline |
-| 3 — ASOS features | Add nearest-station obs as input feature, retrain | Offline (ASOS API batch) |
-| 4 — Operational | Live HRRR ingestion, real-time correction, ASOS streaming | Live infrastructure |
+| 3a — Baselines | Compute naive + climatological bias correction from Phase 2 forecast/truth pairs | Fully offline, reproducible |
+| 3b — MLP | Train MLP baseline, compare skill vs. 3a | Offline |
+| 3c — LSTM | Train LSTM, compare skill vs. 3a/3b | Offline |
+| 3d — Validation | Skill score vs. baselines across held-out events, lead-time diagnostics | Offline |
+| 3e — Transformer (stretch) | If LSTM shows skill and L > 72hr matters | Offline |
+| 3f — ASOS features (stretch) | Add nearest-station obs as input feature, retrain | Offline (ASOS API batch) |
 
-Phase 4 is explicitly deferred until Phase 1–3 demonstrate skill. This avoids
-building operational infrastructure before the science is validated.
+Operational/live ingestion is explicitly out of scope — this is a retrospective,
+reproducible research tool, not an operational forecasting system.
 
 ---
 
@@ -366,8 +427,8 @@ building operational infrastructure before the science is validated.
   produces a full corrected forecast trajectory, not just a point estimate.
 - **Catalog-stratified splits** — train/val splits respect event boundaries,
   preventing data leakage across a storm's forecast window.
-- **LSTM first, Transformer second** — LSTM is the baseline because it is
-  simpler to debug and trains faster on short sequences (L ≤ 48). Transformer
-  is the upgrade path for longer horizons or richer feature sets.
+- **Baseline-first** — a model is only worth building if it beats the
+  climatological bias correction from Phase 2. MLP before LSTM before
+  Transformer, each step justified by the previous one's results.
 - **Correction is additive** — `f_corrected = f - ε_pred` keeps the physical
   interpretation clean and makes the model's contribution auditable.

@@ -71,9 +71,6 @@ def list_events():
     catalog = load_catalog()
     return list(catalog.keys())
 
-
-
-
 # Professional Python
 # def get_event(key):
 #     # key = "Snowzilla_2016"
@@ -81,3 +78,9 @@ def list_events():
 #     if key not in catalog:
 #         raise KeyError(f"Event '{key}' not found. Available: {list(catalog.keys())}")
 #     return catalog[key]
+
+
+# Return something like: snowzilla_2016_2016-01-21_2016-01-25_merged.nc"
+def get_data_file(event_key):
+    event = get_event(event_key)
+    return f"{event_key}_{event.start}_{event.end}_merged.nc"

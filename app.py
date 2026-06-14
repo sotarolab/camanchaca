@@ -9,15 +9,18 @@ from dash import Dash, Input, Output, State, callback, dcc, html
 ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT / "src"))
 from camanchaca.loader import VARIABLE_META, load_era5, get_time_labels, get_variable_array
-from camanchaca.catalog import get_event 
+from camanchaca.catalog import get_event, get_data_file, list_events 
 
 # ---------------------------------------------------------------------------
 # Data Loading
 # ---------------------------------------------------------------------------
+event_keys = list_events()
+default_event = event_keys[0]
 
-DATA_FILE = ROOT / "data" / "snowzilla_2016_2016-01-21_2016-01-25_merged.nc"
-
+filename = get_data_file(default_event)
+DATA_FILE = ROOT / "data" / filename
 ds = load_era5(DATA_FILE)
+
 TIMES = ds.time.values
 TIME_LABELS = get_time_labels(ds)
 AVAILABLE_VARS = [v for v in VARIABLE_META if v in ds.data_vars]
@@ -46,6 +49,15 @@ app.layout = html.Div(
                 style={"color": "#60a5fa", "margin": "0", "fontSize": "1.8rem"}),
         html.P("Snowzilla 2016 — ERA5 Event Explorer",
                style={"color": "#9ca3af", "margin": "4px 0 16px 0"}),
+        # Event dropdown
+        dcc.Dropdown(
+            id="event-name",
+            options=[{"label": get_event(k).name, "value": k}
+                     for k in event_keys],
+            value=default_event,
+            clearable=False,
+            style={"width": "300px", "marginBottom": "16px"},
+        ),
 
         # Variable dropdown
         dcc.Dropdown(
